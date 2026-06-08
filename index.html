@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Day Everything Changed </title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Crimson+Pro:ital,wght@0,200;0,300;1,200&family=Tenor+Sans&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --navy: #020818;
+    --deep: #050d2e;
+    --mid: #0a1a4a;
+    --glow: #4a7fff;
+    --soft: #a8c4ff;
+    --gold: #d4a843;
+    --rose: #e8a0b4;
+    --cream: #f0e8d8;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--navy);
+    overflow: hidden;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--cream);
+    cursor: default;
+  }
+
+  /* ── Stars ── */
+  #star-canvas {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── Tap overlay ── */
+  #tap-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(2,8,24,0.92);
+    backdrop-filter: blur(4px);
+    transition: opacity 0.8s ease;
+  }
+  #tap-overlay .tap-ring {
+    width: 120px; height: 120px;
+    border: 1px solid rgba(168,196,255,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    animation: pulseRing 2s ease-in-out infinite;
+    margin-bottom: 32px;
+  }
+  #tap-overlay .tap-ring::before {
+    content: '';
+    width: 80px; height: 80px;
+    border: 1px solid rgba(168,196,255,0.6);
+    border-radius: 50%;
+    position: absolute;
+    animation: pulseRing 2s ease-in-out infinite 0.3s;
+  }
+  #tap-overlay .tap-icon {
+    font-size: 32px; opacity: 0.7;
+  }
+  #tap-overlay p {
+    font-family: 'Crimson Pro', serif;
+    font-size: clamp(16px, 4vw, 22px);
+    font-weight: 200;
+    letter-spacing: 0.12em;
+    color: var(--soft);
+    opacity: 0.85;
+    text-align: center;
+    padding: 0 24px;
+  }
+  @keyframes pulseRing {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.08); opacity: 1; }
+  }
+  #tap-overlay.hidden { opacity: 0; pointer-events: none; }
+
+  /* ── Main content ── */
+  #main {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px clamp(16px, 6vw, 48px);
+    overflow-y: auto;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  #main.visible { opacity: 1; }
+
+  .eyebrow {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: clamp(9px, 1.8vw, 11px);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--soft);
+    opacity: 0.55;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: clamp(22px, 5.5vw, 80px);
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+    text-align: center;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: min(92vw, 900px);
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #ffffff 0%, var(--soft) 50%, var(--rose) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-family: 'Crimson Pro', serif;
+    font-size: clamp(14px, 3vw, 19px);
+    font-weight: 200;
+    font-style: italic;
+    color: rgba(240,232,216,0.6);
+    margin-bottom: 52px;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+
+  /* ── Date Picker ── */
+  .date-container {
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+  }
+
+  .date-label {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(168,196,255,0.45);
+    margin-bottom: 18px;
+  }
+
+  .date-inputs {
+    display: flex; align-items: center; gap: 0;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(168,196,255,0.12);
+    border-radius: 4px;
+    padding: 2px;
+    backdrop-filter: blur(10px);
+  }
+
+  .date-part {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 20px;
+  }
+
+  .date-part label {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 8px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(168,196,255,0.35);
+    margin-bottom: 8px;
+  }
+
+  .date-part input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--cream);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(24px, 5vw, 38px);
+    font-weight: 300;
+    width: clamp(52px, 10vw, 72px);
+    text-align: center;
+    letter-spacing: 0.05em;
+    -moz-appearance: textfield;
+  }
+  .date-part input::-webkit-inner-spin-button,
+  .date-part input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .date-part input::placeholder { color: rgba(168,196,255,0.2); }
+  .date-part input:focus { color: #fff; }
+
+  .date-sep {
+    font-size: 28px;
+    color: rgba(168,196,255,0.2);
+    font-weight: 200;
+    padding: 0 2px;
+    align-self: center;
+    margin-top: 14px;
+  }
+
+  .enter-btn {
+    margin-top: 28px;
+    background: none;
+    border: 1px solid rgba(168,196,255,0.25);
+    color: var(--soft);
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    padding: 14px 40px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .enter-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(74,127,255,0.1), rgba(232,160,180,0.1));
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+  }
+  .enter-btn:hover::before { transform: translateX(0); }
+  .enter-btn:hover {
+    border-color: rgba(168,196,255,0.5);
+    color: #fff;
+  }
+
+  /* ── Message ── */
+  #message {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+    z-index: 20; pointer-events: none;
+    text-align: center;
+    opacity: 0; transition: opacity 0.5s ease;
+  }
+  #message.show { opacity: 1; }
+  #message p {
+    font-family: 'Crimson Pro', serif;
+    font-size: clamp(13px, 3vw, 16px);
+    font-weight: 200;
+    font-style: italic;
+    color: var(--rose);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Constellation SVG ── */
+  #constellation-svg {
+    position: fixed; inset: 0; z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+
+  /* ── Transition overlay ── */
+  #transition-veil {
+    position: fixed; inset: 0; z-index: 200;
+    background: var(--navy);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.8s ease;
+  }
+  #transition-veil.fade-in { opacity: 1; pointer-events: all; }
+
+  /* ── Shimmer on correct ── */
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .shimmer-text {
+    background: linear-gradient(90deg, var(--cream) 0%, var(--gold) 40%, var(--cream) 60%, var(--soft) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* ── Leo label ── */
+  #leo-label {
+    position: fixed;
+    z-index: 6;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.2s ease 1s;
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(212,168,67,0.7);
+  }
+  #leo-label.visible { opacity: 1; }
+
+  @media (max-width: 480px) {
+    .date-part { padding: 10px 10px; }
+    .enter-btn { padding: 13px 24px; }
+    .subtitle { margin-bottom: 36px; font-size: clamp(13px, 3.5vw, 16px); }
+    .date-part input { width: clamp(42px, 18vw, 60px); font-size: clamp(20px, 6vw, 30px); }
+  }
+  @media (max-width: 360px) {
+    .date-part { padding: 8px 8px; }
+    .date-sep { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="star-canvas"></canvas>
+<svg id="constellation-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+<span id="leo-label">Leo</span>
+
+<div id="tap-overlay">
+  <div class="tap-ring"><span class="tap-icon">✦</span></div>
+  <p>Tap anywhere to begin the story</p>
+</div>
+
+<div id="main">
+  <p class="eyebrow">A story written in stars</p>
+  <h1>The Day Everything Changed</h1>
+
+  <div class="date-container">
+    <p class="date-label">Enter the date</p>
+    <div class="date-inputs">
+      <div class="date-part">
+        <label>DD</label>
+        <input type="number" id="dd" min="1" max="31" placeholder="DD" maxlength="2">
+      </div>
+      <span class="date-sep">·</span>
+      <div class="date-part">
+        <label>MM</label>
+        <input type="number" id="mm" min="1" max="12" placeholder="MM" maxlength="2">
+      </div>
+      <span class="date-sep">·</span>
+      <div class="date-part">
+        <label>YYYY</label>
+        <input type="number" id="yyyy" min="1900" max="2099" placeholder="YYYY" maxlength="4">
+      </div>
+    </div>
+    <button class="enter-btn" id="enter-btn">Begin ✦</button>
+  </div>
+</div>
+
+<div id="message"><p id="message-text"></p></div>
+<div id="transition-veil"></div>
+
+<audio id="bg-music" loop>
+  <source src="btune.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+// ── Star field ──
+const canvas = document.getElementById('star-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, stars = [], particles = [];
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function initStars() {
+  stars = [];
+  const count = Math.floor((W * H) / 3000);
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.4 + 0.2,
+      alpha: Math.random() * 0.7 + 0.2,
+      speed: Math.random() * 0.008 + 0.002,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+function initParticles() {
+  particles = [];
+  for (let i = 0; i < 30; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 2 + 0.5,
+      vy: -(Math.random() * 0.3 + 0.05),
+      vx: (Math.random() - 0.5) * 0.2,
+      alpha: Math.random() * 0.4 + 0.1,
+      color: Math.random() > 0.5 ? '#4a7fff' : '#e8a0b4',
+    });
+  }
+}
+
+let t = 0;
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const grad = ctx.createRadialGradient(W*0.5, H*0.3, 0, W*0.5, H*0.5, Math.max(W,H)*0.8);
+  grad.addColorStop(0, '#0a1a4a');
+  grad.addColorStop(0.5, '#040f2e');
+  grad.addColorStop(1, '#020818');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  t += 0.01;
+  stars.forEach(s => {
+    const a = s.alpha * (0.6 + 0.4 * Math.sin(t * s.speed * 60 + s.phase));
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(200,220,255,${a})`;
+    ctx.fill();
+  });
+
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+    const a = p.alpha * (0.5 + 0.5 * Math.sin(t * 2 + p.x));
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = p.color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+
+  requestAnimationFrame(draw);
+}
+
+resize();
+initStars();
+initParticles();
+draw();
+window.addEventListener('resize', () => { resize(); initStars(); });
+
+// ── Leo Constellation ──
+// Star positions as fractions of screen (x, y)
+// Sickle (head/mane): the backwards question-mark shape
+// Body triangle + tail
+const NODES = [
+  [0.50, 0.65], // 0  Regulus      – alpha Leo, brightest, base of sickle
+  [0.46, 0.55], // 1  Eta Leonis   – lower sickle
+  [0.42, 0.45], // 2  Algieba      – gamma Leo, mid sickle
+  [0.40, 0.35], // 3  Adhafera     – zeta Leo, upper sickle
+  [0.38, 0.28], // 4  Rasalas      – mu Leo, top of sickle
+  [0.44, 0.30], // 5  Epsilon Leo  – curves sickle back inward
+  [0.48, 0.38], // 6  Lambda Leo   – closes the sickle hook
+  [0.62, 0.55], // 7  Zosma        – delta Leo, back/body
+  [0.72, 0.48], // 8  Denebola     – beta Leo, tail star
+  [0.65, 0.65], // 9  Theta Leo    – lower body
+];
+
+const EDGES = [
+  // Sickle (head/mane of the lion)
+  [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 2],
+  // Body triangle
+  [0, 7], [7, 9], [9, 0],
+  // Tail
+  [7, 8],
+];
+
+const consvg = document.getElementById('constellation-svg');
+const leoLabel = document.getElementById('leo-label');
+
+function buildConstellation() {
+  consvg.innerHTML = '';
+  consvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  EDGES.forEach(([a, b], i) => {
+    const [x1, y1] = [NODES[a][0] * W, NODES[a][1] * H];
+    const [x2, y2] = [NODES[b][0] * W, NODES[b][1] * H];
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', 'rgba(168,196,255,0.5)');
+    line.setAttribute('stroke-width', '0.8');
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    line.style.strokeDasharray = len;
+    line.style.strokeDashoffset = len;
+    line.style.transition = `stroke-dashoffset 0.6s ease ${i * 0.07}s`;
+    consvg.appendChild(line);
+  });
+
+  NODES.forEach(([nx, ny], i) => {
+    const isRegulus  = i === 0;
+    const isDenebola = i === 8;
+
+    // Glow ring behind Regulus
+    if (isRegulus) {
+      const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      glow.setAttribute('cx', nx * W);
+      glow.setAttribute('cy', ny * H);
+      glow.setAttribute('r', 14);
+      glow.setAttribute('fill', 'rgba(212,168,67,0)');
+      glow.setAttribute('id', 'regulus-glow');
+      glow.style.transition = 'fill 0.8s ease 0.5s';
+      consvg.appendChild(glow);
+    }
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', nx * W);
+    circle.setAttribute('cy', ny * H);
+    circle.setAttribute('r', isRegulus ? 5 : isDenebola ? 4 : 3);
+    circle.setAttribute('fill', 'rgba(200,220,255,0)');
+    circle.style.transition = `fill 0.4s ease ${i * 0.06 + 0.3}s`;
+    if (isRegulus) circle.setAttribute('id', 'regulus-star');
+    consvg.appendChild(circle);
+  });
+
+  // Position the "Leo" label near Regulus
+  const rx = NODES[0][0] * W;
+  const ry = NODES[0][1] * H;
+  leoLabel.style.left = (rx + 14) + 'px';
+  leoLabel.style.top  = (ry + 10) + 'px';
+}
+
+buildConstellation();
+window.addEventListener('resize', () => { buildConstellation(); });
+
+function animateConstellation() {
+  consvg.style.opacity = '1';
+
+  // Draw lines
+  const lines = consvg.querySelectorAll('line');
+  lines.forEach(l => { l.style.strokeDashoffset = '0'; });
+
+  // Light up stars
+  const circles = consvg.querySelectorAll('circle');
+  circles.forEach((c) => {
+    if (c.id === 'regulus-glow') {
+      c.setAttribute('fill', 'rgba(212,168,67,0.18)');
+    } else if (c.id === 'regulus-star') {
+      c.setAttribute('fill', '#d4a843');
+    } else {
+      c.setAttribute('fill', 'rgba(168,196,255,0.9)');
+    }
+  });
+
+  // Fade in the Leo label
+  leoLabel.classList.add('visible');
+}
+
+// ── Music ──
+const music = document.getElementById('bg-music');
+const overlay = document.getElementById('tap-overlay');
+const main = document.getElementById('main');
+let musicStarted = false;
+
+function startMusic() {
+  if (musicStarted) return;
+  const pos = sessionStorage.getItem('musicPos');
+  if (pos) music.currentTime = parseFloat(pos);
+  music.play().then(() => {
+    musicStarted = true;
+    overlay.classList.add('hidden');
+    setTimeout(() => { overlay.style.display = 'none'; }, 900);
+    main.classList.add('visible');
+  }).catch(() => {});
+}
+
+music.volume = 0.6;
+music.play().then(() => {
+  musicStarted = true;
+  overlay.classList.add('hidden');
+  setTimeout(() => { overlay.style.display = 'none'; }, 900);
+  main.classList.add('visible');
+}).catch(() => {
+  setTimeout(() => { main.classList.add('visible'); }, 300);
+});
+
+overlay.addEventListener('click', startMusic);
+document.body.addEventListener('keydown', startMusic, { once: true });
+
+setInterval(() => {
+  if (!music.paused) sessionStorage.setItem('musicPos', music.currentTime);
+}, 1000);
+
+// ── Date logic ──
+const ddInput   = document.getElementById('dd');
+const mmInput   = document.getElementById('mm');
+const yyyyInput = document.getElementById('yyyy');
+const enterBtn  = document.getElementById('enter-btn');
+const messageEl = document.getElementById('message');
+const msgText   = document.getElementById('message-text');
+const veil      = document.getElementById('transition-veil');
+
+ddInput.addEventListener('input',   () => { if (ddInput.value.length   >= 2) mmInput.focus(); });
+mmInput.addEventListener('input',   () => { if (mmInput.value.length   >= 2) yyyyInput.focus(); });
+yyyyInput.addEventListener('input', () => { if (yyyyInput.value.length >= 4) enterBtn.focus(); });
+
+let msgTimer;
+function showMessage(text, isError) {
+  clearTimeout(msgTimer);
+  msgText.textContent = text;
+  msgText.style.color = isError ? '#e8a0b4' : '#d4a843';
+  messageEl.classList.add('show');
+  msgTimer = setTimeout(() => messageEl.classList.remove('show'), 3500);
+}
+
+const WRONG_MSGS = [
+  "That's not quite right, my love...",
+  "Think back a little harder...",
+  "The stars remember a different day...",
+  "Close, but the constellations disagree...",
+];
+let wrongIdx = 0;
+
+enterBtn.addEventListener('click', checkDate);
+document.addEventListener('keydown', e => { if (e.key === 'Enter') checkDate(); });
+
+function checkDate() {
+  const dd   = parseInt(ddInput.value);
+  const mm   = parseInt(mmInput.value);
+  const yyyy = parseInt(yyyyInput.value);
+
+  if (!dd || !mm || !yyyy) { showMessage('Please enter a complete date...', true); return; }
+
+  if (dd === 9 && mm === 6 && yyyy === 2000) {
+    // Correct!
+    showMessage('Yes... that was the day ✦', false);
+    animateConstellation();
+
+    // Shimmer heading
+    const heading = document.querySelector('h1');
+    heading.classList.add('shimmer-text');
+    heading.style.webkitTextFillColor = '';
+
+    setTimeout(() => {
+      sessionStorage.setItem('musicPos', music.currentTime);
+      veil.classList.add('fade-in');
+      setTimeout(() => { window.location.href = 'journey.html'; }, 900);
+    }, 2200);
+  } else {
+    showMessage(WRONG_MSGS[wrongIdx % WRONG_MSGS.length], true);
+    wrongIdx++;
+    const inp = document.querySelector('.date-inputs');
+    inp.style.animation = 'none';
+    inp.offsetHeight;
+    inp.style.animation = 'shake 0.4s ease';
+  }
+}
+
+// Shake keyframe
+const style = document.createElement('style');
+style.textContent = `
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>
